@@ -1,113 +1,109 @@
 import java.util.*;
-//Autocomplete System for Search Engine
+
+class ParkingSpot {
+    String licensePlate;
+    long entryTime; // in milliseconds
+    boolean occupied;
+
+    ParkingSpot() {
+        licensePlate = null;
+        occupied = false;
+        entryTime = 0;
+    }
+}
+
 public class WeeklyAssigment1 {
 
-    // query -> frequency
-    static HashMap<String, Integer> queryFrequency = new HashMap<>();
+    static final int SIZE = 500;
+    static ParkingSpot[] spots = new ParkingSpot[SIZE];
 
-    // add or update search query
-    public static void updateFrequency(String query) {
-        queryFrequency.put(query, queryFrequency.getOrDefault(query, 0) + 1);
-        System.out.println("Updated: \"" + query + "\" → Frequency: " + queryFrequency.get(query));
-    }
+    static int totalProbes = 0;
+    static int totalParked = 0;
 
-    // return top 10 suggestions for prefix
-    public static void search(String prefix) {import java.util.*;
-
-        public class WeeklyAssignment1 {
-
-            // query -> frequency
-            static HashMap<String, Integer> queryFrequency = new HashMap<>();
-
-            // add or update search query
-            public static void updateFrequency(String query) {
-                queryFrequency.put(query, queryFrequency.getOrDefault(query, 0) + 1);
-                System.out.println("Updated: \"" + query + "\" → Frequency: " + queryFrequency.get(query));
-            }
-
-            // return top 10 suggestions for prefix
-            public static void search(String prefix) {
-
-                List<Map.Entry<String, Integer>> matches = new ArrayList<>();
-
-                for (Map.Entry<String, Integer> entry : queryFrequency.entrySet()) {
-                    if (entry.getKey().startsWith(prefix)) {
-                        matches.add(entry);
-                    }
-                }
-
-                // sort by frequency (descending)
-                matches.sort((a, b) -> b.getValue() - a.getValue());
-
-                System.out.println("\nSuggestions for \"" + prefix + "\":");
-
-                int count = 0;
-
-                for (Map.Entry<String, Integer> entry : matches) {
-                    System.out.println((count + 1) + ". " + entry.getKey() +
-                            " (" + entry.getValue() + " searches)");
-                    count++;
-
-                    if (count == 10) break;
-                }
-
-                if (count == 0) {
-                    System.out.println("No suggestions found.");
-                }
-            }
-
-            public static void main(String[] args) {
-
-                updateFrequency("java tutorial");
-                updateFrequency("javascript");
-                updateFrequency("java download");
-                updateFrequency("java tutorial");
-                updateFrequency("java 21 features");
-                updateFrequency("java 21 features");
-                updateFrequency("java 21 features");
-
-                search("jav");
-            }
-        }
-
-        List<Map.Entry<String, Integer>> matches = new ArrayList<>();
-
-        for (Map.Entry<String, Integer> entry : queryFrequency.entrySet()) {
-            if (entry.getKey().startsWith(prefix)) {
-                matches.add(entry);
-            }
-        }
-
-        // sort by frequency (descending)
-        matches.sort((a, b) -> b.getValue() - a.getValue());
-
-        System.out.println("\nSuggestions for \"" + prefix + "\":");
-
-        int count = 0;
-
-        for (Map.Entry<String, Integer> entry : matches) {
-            System.out.println((count + 1) + ". " + entry.getKey() +
-                    " (" + entry.getValue() + " searches)");
-            count++;
-
-            if (count == 10) break;
-        }
-
-        if (count == 0) {
-            System.out.println("No suggestions found.");
+    static {
+        for (int i = 0; i < SIZE; i++) {
+            spots[i] = new ParkingSpot();
         }
     }
 
-    public static void main(String[] args) {
+    // Simple hash function: sum of ASCII % SIZE
+    public static int hash(String licensePlate) {
+        int sum = 0;
+        for (char c : licensePlate.toCharArray()) sum += c;
+        return sum % SIZE;
+    }
 
-        updateFrequency("java tutorial");
-        updateFrequency("javascript");
-        updateFrequency("java download");
-        updateFrequency("java tutorial");
-        updateFrequency("java 21 features");
-        updateFrequency("java 21 features");
-        updateFrequency("java 21 features");
+    // Park a vehicle using linear probing
+    public static void parkVehicle(String licensePlate) {
+        int idx = hash(licensePlate);
+        int probes = 0;
 
-        search("jav");
+        while (spots[idx].occupied) {
+            probes++;
+            idx = (idx + 1) % SIZE;
+        }
+
+        spots[idx].occupied = true;
+        spots[idx].licensePlate = licensePlate;
+        spots[idx].entryTime = System.currentTimeMillis();
+
+        totalProbes += probes;
+        totalParked++;
+
+        System.out.println("Vehicle " + licensePlate +
+                " parked at spot #" + idx + " (" + probes + " probes)");
+    }
+
+    // Exit a vehicle and calculate fee
+    public static void exitVehicle(String licensePlate) {
+
+        for (int i = 0; i < SIZE; i++) {
+            if (spots[i].occupied && spots[i].licensePlate.equals(licensePlate)) {
+
+                long durationMs = System.currentTimeMillis() - spots[i].entryTime;
+                double hours = durationMs / (1000.0 * 60 * 60);
+                double fee = hours * 5; // $5 per hour
+
+                spots[i].occupied = false;
+                spots[i].licensePlate = null;
+                spots[i].entryTime = 0;
+
+                totalParked--;
+
+                System.out.println("Vehicle " + licensePlate +
+                        " exited from spot #" + i +
+                        ", Duration: " + String.format("%.2f", hours) +
+                        "h, Fee: $" + String.format("%.2f", fee));
+
+                return;
+            }
+        }
+
+        System.out.println("Vehicle " + licensePlate + " not found.");
+    }
+
+    // Generate statistics
+    public static void getStatistics() {
+        int occupiedCount = 0;
+        for (ParkingSpot spot : spots) if (spot.occupied) occupiedCount++;
+
+        double occupancy = (occupiedCount * 100.0) / SIZE;
+        double avgProbes = totalParked == 0 ? 0 : (totalProbes * 1.0 / totalParked);
+
+        System.out.println("Occupancy: " + String.format("%.2f", occupancy) + "%" +
+                ", Avg Probes: " + String.format("%.2f", avgProbes));
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+
+        parkVehicle("ABC-1234");
+        parkVehicle("ABC-1235");
+        parkVehicle("XYZ-9999");
+
+        Thread.sleep(2000); // simulate 2 seconds parked
+
+        exitVehicle("ABC-1234");
+
+        getStatistics();
     }
 }

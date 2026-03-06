@@ -1,87 +1,87 @@
 import java.util.*;
 
+class TokenBucket {
+    int tokens;
+    int maxTokens;
+    long lastRefillTime;
+    int refillRate; // tokens per hour
+
+    TokenBucket(int maxTokens) {
+        this.maxTokens = maxTokens;
+        this.tokens = maxTokens;
+        this.refillRate = maxTokens;
+        this.lastRefillTime = System.currentTimeMillis();
+    }
+
+    // refill tokens every hour
+    void refill() {
+        long currentTime = System.currentTimeMillis();
+        long diff = currentTime - lastRefillTime;
+
+        if (diff >= 3600000) { // 1 hour
+            tokens = maxTokens;
+            lastRefillTime = currentTime;
+        }
+    }
+    boolean allowRequest() {
+        refill();
+
+        if (tokens > 0) {
+            tokens--;
+            return true;
+        }
+
+        return false;
+    }
+
+    int remaining() {
+        refill();
+        return tokens;
+    }
+}
+
 public class WeeklyAssigment1 {
-//Real-Time Analytics Dashboard for Website
-//Traffic
-    // pageUrl -> visit count
-    static HashMap<String, Integer> pageViews = new HashMap<>();
 
-    // pageUrl -> set of unique users
-    static HashMap<String, HashSet<String>> uniqueVisitors = new HashMap<>();
+    static HashMap<String, TokenBucket> clients = new HashMap<>();
+    static int LIMIT = 1000;
 
-    // traffic source -> count
-    static HashMap<String, Integer> trafficSources = new HashMap<>();
+    public static void checkRateLimit(String clientId) {
 
-
-    // Process incoming page view event
-    public static void processEvent(String url, String userId, String source) {
-
-        // Count page views
-        pageViews.put(url, pageViews.getOrDefault(url, 0) + 1);
-
-        // Track unique visitors
-        uniqueVisitors.putIfAbsent(url, new HashSet<>());
-        uniqueVisitors.get(url).add(userId);
-
-        // Track traffic source
-        trafficSources.put(source, trafficSources.getOrDefault(source, 0) + 1);
-    }
-
-
-    // Display dashboard
-    public static void getDashboard() {
-
-        System.out.println("\n--- REAL TIME DASHBOARD ---\n");
-
-        // Sort pages by views
-        List<Map.Entry<String, Integer>> list = new ArrayList<>(pageViews.entrySet());
-        list.sort((a, b) -> b.getValue() - a.getValue());
-
-        System.out.println("Top Pages:");
-
-        int count = 0;
-
-        for (Map.Entry<String, Integer> entry : list) {
-
-            String page = entry.getKey();
-            int views = entry.getValue();
-            int unique = uniqueVisitors.get(page).size();
-
-            count++;
-
-            System.out.println(count + ". " + page +
-                    " - " + views + " views (" + unique + " unique)");
-
-            if (count == 10) break;
+        if (!clients.containsKey(clientId)) {
+            clients.put(clientId, new TokenBucket(LIMIT));
         }
 
-        System.out.println("\nTraffic Sources:");
+        TokenBucket bucket = clients.get(clientId);
 
-        int total = 0;
-
-        for (int v : trafficSources.values()) {
-            total += v;
-        }
-
-        for (String source : trafficSources.keySet()) {
-
-            int countSource = trafficSources.get(source);
-            double percent = (countSource * 100.0) / total;
-
-            System.out.println(source + ": " + String.format("%.2f", percent) + "%");
+        if (bucket.allowRequest()) {
+            System.out.println("Allowed (" + bucket.remaining() + " requests remaining)");
+        } else {
+            System.out.println("Denied (0 requests remaining, try again later)");
         }
     }
 
+    public static void getRateLimitStatus(String clientId) {
 
-    public static void main(String[] args) throws Exception {
+        if (!clients.containsKey(clientId)) {
+            System.out.println("Client not found");
+            return;
+        }
 
-        processEvent("/article/breaking-news", "user_123", "Google");
-        processEvent("/article/breaking-news", "user_456", "Facebook");
-        processEvent("/sports/championship", "user_789", "Direct");
-        processEvent("/sports/championship", "user_111", "Google");
-        processEvent("/sports/championship", "user_222", "Google");
-        processEvent("/article/breaking-news", "user_123", "Google");
+        TokenBucket bucket = clients.get(clientId);
 
-        getDashboard();
+        int used = LIMIT - bucket.remaining();
+
+        System.out.println("{used: " + used +
+                ", limit: " + LIMIT +
+                ", remaining: " + bucket.remaining() + "}");
+    }
+
+    public static void main(String[] args) {
+
+        checkRateLimit("abc123");
+        checkRateLimit("abc123");
+        checkRateLimit("abc123");
+
+        getRateLimitStatus("abc123");
     }
 }

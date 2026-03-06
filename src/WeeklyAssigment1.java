@@ -1,87 +1,113 @@
 import java.util.*;
-
-class TokenBucket {
-    int tokens;
-    int maxTokens;
-    long lastRefillTime;
-    int refillRate; // tokens per hour
-
-    TokenBucket(int maxTokens) {
-        this.maxTokens = maxTokens;
-        this.tokens = maxTokens;
-        this.refillRate = maxTokens;
-        this.lastRefillTime = System.currentTimeMillis();
-    }
-
-    // refill tokens every hour
-    void refill() {
-        long currentTime = System.currentTimeMillis();
-        long diff = currentTime - lastRefillTime;
-
-        if (diff >= 3600000) { // 1 hour
-            tokens = maxTokens;
-            lastRefillTime = currentTime;
-        }
-    }
-    boolean allowRequest() {
-        refill();
-
-        if (tokens > 0) {
-            tokens--;
-            return true;
-        }
-
-        return false;
-    }
-
-    int remaining() {
-        refill();
-        return tokens;
-    }
-}
-
+//Autocomplete System for Search Engine
 public class WeeklyAssigment1 {
 
-    static HashMap<String, TokenBucket> clients = new HashMap<>();
-    static int LIMIT = 1000;
+    // query -> frequency
+    static HashMap<String, Integer> queryFrequency = new HashMap<>();
 
-    public static void checkRateLimit(String clientId) {
-
-        if (!clients.containsKey(clientId)) {
-            clients.put(clientId, new TokenBucket(LIMIT));
-        }
-
-        TokenBucket bucket = clients.get(clientId);
-
-        if (bucket.allowRequest()) {
-            System.out.println("Allowed (" + bucket.remaining() + " requests remaining)");
-        } else {
-            System.out.println("Denied (0 requests remaining, try again later)");
-        }
+    // add or update search query
+    public static void updateFrequency(String query) {
+        queryFrequency.put(query, queryFrequency.getOrDefault(query, 0) + 1);
+        System.out.println("Updated: \"" + query + "\" → Frequency: " + queryFrequency.get(query));
     }
 
-    public static void getRateLimitStatus(String clientId) {
+    // return top 10 suggestions for prefix
+    public static void search(String prefix) {import java.util.*;
 
-        if (!clients.containsKey(clientId)) {
-            System.out.println("Client not found");
-            return;
+        public class WeeklyAssignment1 {
+
+            // query -> frequency
+            static HashMap<String, Integer> queryFrequency = new HashMap<>();
+
+            // add or update search query
+            public static void updateFrequency(String query) {
+                queryFrequency.put(query, queryFrequency.getOrDefault(query, 0) + 1);
+                System.out.println("Updated: \"" + query + "\" → Frequency: " + queryFrequency.get(query));
+            }
+
+            // return top 10 suggestions for prefix
+            public static void search(String prefix) {
+
+                List<Map.Entry<String, Integer>> matches = new ArrayList<>();
+
+                for (Map.Entry<String, Integer> entry : queryFrequency.entrySet()) {
+                    if (entry.getKey().startsWith(prefix)) {
+                        matches.add(entry);
+                    }
+                }
+
+                // sort by frequency (descending)
+                matches.sort((a, b) -> b.getValue() - a.getValue());
+
+                System.out.println("\nSuggestions for \"" + prefix + "\":");
+
+                int count = 0;
+
+                for (Map.Entry<String, Integer> entry : matches) {
+                    System.out.println((count + 1) + ". " + entry.getKey() +
+                            " (" + entry.getValue() + " searches)");
+                    count++;
+
+                    if (count == 10) break;
+                }
+
+                if (count == 0) {
+                    System.out.println("No suggestions found.");
+                }
+            }
+
+            public static void main(String[] args) {
+
+                updateFrequency("java tutorial");
+                updateFrequency("javascript");
+                updateFrequency("java download");
+                updateFrequency("java tutorial");
+                updateFrequency("java 21 features");
+                updateFrequency("java 21 features");
+                updateFrequency("java 21 features");
+
+                search("jav");
+            }
         }
 
-        TokenBucket bucket = clients.get(clientId);
+        List<Map.Entry<String, Integer>> matches = new ArrayList<>();
 
-        int used = LIMIT - bucket.remaining();
+        for (Map.Entry<String, Integer> entry : queryFrequency.entrySet()) {
+            if (entry.getKey().startsWith(prefix)) {
+                matches.add(entry);
+            }
+        }
 
-        System.out.println("{used: " + used +
-                ", limit: " + LIMIT +
-                ", remaining: " + bucket.remaining() + "}");
+        // sort by frequency (descending)
+        matches.sort((a, b) -> b.getValue() - a.getValue());
+
+        System.out.println("\nSuggestions for \"" + prefix + "\":");
+
+        int count = 0;
+
+        for (Map.Entry<String, Integer> entry : matches) {
+            System.out.println((count + 1) + ". " + entry.getKey() +
+                    " (" + entry.getValue() + " searches)");
+            count++;
+
+            if (count == 10) break;
+        }
+
+        if (count == 0) {
+            System.out.println("No suggestions found.");
+        }
     }
 
     public static void main(String[] args) {
 
-        checkRateLimit("abc123");
-        checkRateLimit("abc123");
-        checkRateLimit("abc123");
+        updateFrequency("java tutorial");
+        updateFrequency("javascript");
+        updateFrequency("java download");
+        updateFrequency("java tutorial");
+        updateFrequency("java 21 features");
+        updateFrequency("java 21 features");
+        updateFrequency("java 21 features");
 
-        getRateLimitStatus("abc123");
+        search("jav");
     }
 }

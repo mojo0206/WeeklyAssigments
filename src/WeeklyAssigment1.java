@@ -1,108 +1,87 @@
 import java.util.*;
 
 public class WeeklyAssigment1 {
-    //Plagiarism Detection System
-    // n-gram size
-    static int N = 5;
+//Real-Time Analytics Dashboard for Website
+//Traffic
+    // pageUrl -> visit count
+    static HashMap<String, Integer> pageViews = new HashMap<>();
 
-    // ngram -> set of document IDs
-    static HashMap<String, HashSet<String>> ngramIndex = new HashMap<>();
+    // pageUrl -> set of unique users
+    static HashMap<String, HashSet<String>> uniqueVisitors = new HashMap<>();
 
-    // store document text
-    static HashMap<String, String> documents = new HashMap<>();
+    // traffic source -> count
+    static HashMap<String, Integer> trafficSources = new HashMap<>();
 
 
-    // Break text into n-grams
-    public static List<String> generateNGrams(String text) {
-        String[] words = text.toLowerCase().split("\\s+");
-        List<String> grams = new ArrayList<>();
+    // Process incoming page view event
+    public static void processEvent(String url, String userId, String source) {
 
-        for (int i = 0; i <= words.length - N; i++) {
-            String gram = "";
-            for (int j = 0; j < N; j++) {
-                gram += words[i + j] + " ";
-            }
-            grams.add(gram.trim());
-        }
+        // Count page views
+        pageViews.put(url, pageViews.getOrDefault(url, 0) + 1);
 
-        return grams;
+        // Track unique visitors
+        uniqueVisitors.putIfAbsent(url, new HashSet<>());
+        uniqueVisitors.get(url).add(userId);
+
+        // Track traffic source
+        trafficSources.put(source, trafficSources.getOrDefault(source, 0) + 1);
     }
 
 
-    // Add document to database
-    public static void addDocument(String docId, String text) {
+    // Display dashboard
+    public static void getDashboard() {
 
-        documents.put(docId, text);
+        System.out.println("\n--- REAL TIME DASHBOARD ---\n");
 
-        List<String> grams = generateNGrams(text);
+        // Sort pages by views
+        List<Map.Entry<String, Integer>> list = new ArrayList<>(pageViews.entrySet());
+        list.sort((a, b) -> b.getValue() - a.getValue());
 
-        for (String g : grams) {
+        System.out.println("Top Pages:");
 
-            if (!ngramIndex.containsKey(g)) {
-                ngramIndex.put(g, new HashSet<>());
-            }
+        int count = 0;
 
-            ngramIndex.get(g).add(docId);
-        }
-    }
+        for (Map.Entry<String, Integer> entry : list) {
 
+            String page = entry.getKey();
+            int views = entry.getValue();
+            int unique = uniqueVisitors.get(page).size();
 
-    // Analyze document for plagiarism
-    public static void analyzeDocument(String docId) {
+            count++;
 
-        String text = documents.get(docId);
+            System.out.println(count + ". " + page +
+                    " - " + views + " views (" + unique + " unique)");
 
-        List<String> grams = generateNGrams(text);
-
-        HashMap<String, Integer> matchCount = new HashMap<>();
-
-        for (String g : grams) {
-
-            if (ngramIndex.containsKey(g)) {
-
-                for (String otherDoc : ngramIndex.get(g)) {
-
-                    if (!otherDoc.equals(docId)) {
-
-                        matchCount.put(otherDoc,
-                                matchCount.getOrDefault(otherDoc, 0) + 1);
-                    }
-                }
-            }
+            if (count == 10) break;
         }
 
-        System.out.println("Analyzing: " + docId);
-        System.out.println("Extracted " + grams.size() + " n-grams\n");
+        System.out.println("\nTraffic Sources:");
 
-        for (String doc : matchCount.keySet()) {
+        int total = 0;
 
-            int matches = matchCount.get(doc);
-            double similarity = (matches * 100.0) / grams.size();
+        for (int v : trafficSources.values()) {
+            total += v;
+        }
 
-            System.out.println("Found " + matches + " matching n-grams with " + doc);
-            System.out.println("Similarity: " + String.format("%.2f", similarity) + "%");
+        for (String source : trafficSources.keySet()) {
 
-            if (similarity > 50) {
-                System.out.println("PLAGIARISM DETECTED\n");
-            } else if (similarity > 10) {
-                System.out.println("Suspicious\n");
-            } else {
-                System.out.println("Low similarity\n");
-            }
+            int countSource = trafficSources.get(source);
+            double percent = (countSource * 100.0) / total;
+
+            System.out.println(source + ": " + String.format("%.2f", percent) + "%");
         }
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
-        String doc1 = "data structures and algorithms are important for computer science students learning programming concepts";
-        String doc2 = "data structures and algorithms are very important subjects for students studying computer science";
-        String doc3 = "football players train every day to improve their speed strength and teamwork skills";
+        processEvent("/article/breaking-news", "user_123", "Google");
+        processEvent("/article/breaking-news", "user_456", "Facebook");
+        processEvent("/sports/championship", "user_789", "Direct");
+        processEvent("/sports/championship", "user_111", "Google");
+        processEvent("/sports/championship", "user_222", "Google");
+        processEvent("/article/breaking-news", "user_123", "Google");
 
-        addDocument("essay_089.txt", doc1);
-        addDocument("essay_092.txt", doc2);
-        addDocument("essay_123.txt", doc3);
-
-        analyzeDocument("essay_092.txt");
+        getDashboard();
     }
 }
